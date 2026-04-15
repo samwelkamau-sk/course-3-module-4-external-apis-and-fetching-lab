@@ -8,71 +8,71 @@ const errorMessage = document.getElementById('error-message');
 fetchBtn.addEventListener('click', () => {
   const stateAbbr = stateInput.value.trim().toUpperCase();
 
-  // Step 3: Clear UI and Error Message before new request
+  // Step 3 & 4: Clear UI and Hide Error using the 'hidden' class
   alertsDisplay.innerHTML = '';
   errorMessage.textContent = '';
-  errorMessage.style.display = 'none';
+  errorMessage.classList.add('hidden');
 
-  // Step 5: Simple Validation
-  if (stateAbbr.length !== 2) {
-    showError("Please enter a valid 2-letter state code.");
+  // Step 5: Input Validation
+  if (stateAbbr.length !== 2 || !/^[A-Z]+$/.test(stateAbbr)) {
+    showError("Please enter a valid 2-letter state abbreviation.");
     stateInput.value = '';
     return;
   }
 
   fetchWeatherAlerts(stateAbbr);
-
+  
   // Step 3: Clear the input field
   stateInput.value = '';
 });
 
-// Step 1: Fetch Weather Alerts
 function fetchWeatherAlerts(state) {
   fetch(`${weatherApi}${state}`)
     .then(response => {
       if (!response.ok) {
-        throw new Error('Network response was not ok');
+        throw new Error('Failed to fetch alerts. Please check the state code.');
       }
       return response.json();
     })
     .then(data => {
-      // Log data to console for testing
       console.log(data);
       displayAlerts(data);
     })
     .catch(errorObject => {
-      // Step 4: Handle errors using the message key
       console.log(errorObject.message);
       showError(errorObject.message);
     });
 }
 
-// Step 2: Display the Alerts on the Page
 function displayAlerts(data) {
-  // Clear any loading text or old data
   alertsDisplay.innerHTML = '';
 
-  // Summary message: "Title: Number of Alerts"
+  // Step 2: Show summary
   const summary = document.createElement('h2');
   summary.textContent = `${data.title}: ${data.features.length}`;
   alertsDisplay.appendChild(summary);
 
-  // Create list of headlines
-  const ul = document.createElement('ul');
-  data.features.forEach(feature => {
-    const li = document.createElement('li');
-    // Accessing properties.headline
-    li.textContent = feature.properties.headline;
-    ul.appendChild(li);
+  if (data.features.length === 0) {
+    const noAlerts = document.createElement('p');
+    noAlerts.textContent = "No active alerts for this area.";
+    alertsDisplay.appendChild(noAlerts);
+    return;
+  }
+
+  // Step 2: Show list
+  const list = document.createElement('ul');
+  data.features.forEach(alert => {
+    const listItem = document.createElement('li');
+    listItem.textContent = alert.properties.headline;
+    list.appendChild(listItem);
   });
 
-  alertsDisplay.appendChild(ul);
+  alertsDisplay.appendChild(list);
 }
 
-// Step 4: Implement Error Handling UI
+// Step 4: Show error message by removing the 'hidden' class
 function showError(message) {
+  alertsDisplay.innerHTML = ''; 
   errorMessage.textContent = message;
-  errorMessage.style.display = 'block';
-  // If your CSS uses the .hidden class, use this instead:
-  // errorMessage.classList.remove('hidden');
+  errorMessage.classList.remove('hidden');
 }
